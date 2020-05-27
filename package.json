@@ -1,0 +1,11 @@
+{
+  "name": "factorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "factorial.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "william",
+  "license": "ISC"
+}
