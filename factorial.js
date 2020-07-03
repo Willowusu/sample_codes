@@ -11,5 +11,7 @@ function factorial(n,result){
   function factorialFunc(n){
     return factorial(n,1)
       }
+
+module.exports = factorialFunc; 
       
       console.log(factorialFunc(/*insert number here*/))
