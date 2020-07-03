@@ -14,4 +14,4 @@ function factorial(n,result){
 
 module.exports = factorialFunc; 
       
-      console.log(factorialFunc(/*insert number here*/))
+     
