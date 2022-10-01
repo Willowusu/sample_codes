@@ -1,2 +1,2 @@
 # sample_codes
-this repo contains different types of solutions to problems both solved and unsolved
+snippets of code i would like to remember. If it helps someone, mission accomplished
