@@ -1,0 +1,149 @@
+<!-- 7 sections -->
+<!-- header -->
+<!-- title -->
+<!-- body -->
+<!-- quote -->
+<!-- button -->
+<!-- footer -->
+
+<!-- since this is a google newsletter let's load the fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+<style type="text/css">
+	:root{
+  		--blue: #4285F4;
+  		--red: #EA4335; 
+  		--yellow: #FBBC05; 
+  		--green: #34A853; 
+	}
+	body{
+		font-family: "Open Sans", sans-serif;
+		display: flex;
+		justify-content: center;
+		min-height: 100vh;
+		background-image: url("https://9to5mac.com/wp-content/uploads/sites/6/2020/09/Safari-Background_Emoji_Vacation.jpg?quality=82&strip=all");
+		background-size: cover;
+	}
+	.newsletter{
+		max-width: 40%;
+		word-wrap: break-word;
+		background-color: white;
+		padding: 30px 30px 30px 30px;
+		border-radius: 8px;
+	}
+	.newsletter__header-flex_container, .newsletter__quote{
+		display: flex;
+		justify-content: space-between;
+	}
+	.newsletter__header-flex_container__view-as-image{
+		max-width: 30%;
+		font-size: 8px;
+	}
+	.newsletter__title{
+		text-align: center;
+	}
+	.newsletter__title{
+		text-align: center;
+	}
+	.newsletter__title-main{
+		font-size: 30px;
+	}
+	.newsletter__title-sub{
+		font-size: 12px;
+	}
+	.newsletter__body{
+		text-align: center;
+	}
+	.newsletter__body-banner_image{
+		width: 100%;
+		height: auto;
+	}
+	.newsletter__body-text{
+		text-align: justify;
+		font-size: 14px;
+	}
+	.newsletter__quote{
+		margin-top: 30px;
+	}
+	@media (max-width: 800px) {
+  	.newsletter__quote {
+    	flex-direction: column;
+  	}
+	} 
+	.newsletter__quote-image{
+		border-radius: 50%;
+		margin-right: 20px;
+
+	}
+	@media (max-width: 800px){
+		.newsletter__quote-image{
+			margin-right: 0px;
+			margin-bottom: 20px;
+			width: 100%;
+		    height: auto;
+		}
+	}
+	.newsletter__quote-text{
+		max-width: 100%;
+		font-size: 14px;
+	}
+	.newsletter__button{
+		text-align: center;
+		margin: 20px 0px 20px 0px;
+	}
+	.newsletter__button-see_external{
+		border: none;
+		border-radius: 5px;
+		background-color: var(--blue);
+		color: white;
+		padding: 10px 20px 10px 20px;
+	}
+	.newsletter__footer{
+		text-align: justify;
+		font-size: 10px;
+	}
+	.google__color-blue{
+		color: var(--blue);
+	}
+	.google__color-red{
+		color: var(--red);
+	}
+	.google__color-yellow{
+		color: var(--yellow);
+	}
+	.google__color-green{
+		color: var(--green);
+	}
+</style>
+
+<body>
+	<section class="newsletter">
+		<section class="newsletter__header">
+			<div class="newsletter__header-flex_container">
+				<div>Think with <span class="google__color-blue">G</span><span class="google__color-red">o</span><span class="google__color-yellow">o</span><span class="google__color-blue">g</span><span class="google__color-green">l</span><span class="google__color-red">e</span></div>
+				<div class="newsletter__header-flex_container__view-as-image">You can also view this email as a <span class="google__color-blue">webpage.</span></div>
+			</div>
+			 
+		</section>
+		<section class="newsletter__title">
+			<p class="newsletter__title-main">The Thought-Starter: July 6, 2020</p>
+			<p class="newsletter__title-sub"><i>Is your algotithim biased? <span class="google__color-blue">Build fairness into your machine learning.</span></i></p>
+		</section>
+		<section class="newsletter__body">
+			<img src="https://cloudfix.aurea.com/wp-content/uploads/Generic10.png" class="newsletter__body-banner_image">
+			<p class="newsletter__body-text">Machine learning (ML) is transforming the marketing landscape, helping connect consumers to relevant content and products more accurately than ever before. And yet, while data and algorithms have profound power to do good, they can also do harm. By ensuring that the data fed into ML algorithms does not contain social biases, we can help make the output fair, inclusive, and beneficial to all consumers. <span class="google__color-blue">Read on to understand the importance of ML fairness, so you can build an inclusive ML strategy.<span></p>
+		</section>
+		<section class="newsletter__quote">
+			<div><img src="https://i.pravatar.cc/160" class="newsletter__quote-image"></div>
+			<div class="newsletter__quote-text"><span class="google__color-blue">"</span> Bear in mind, there's only so much that the hottest algorithm can help you with if your data isn't very good.Put your effort into making sure that your data, your ingredients are relevant to the task. And if you have the most beautiful ingredients, you can get away with a very simple kitchen. <span class="google__color-blue">"</span><p><b> - Cassie Kozyrkov, Chief Decision Scientist at Google Cloud</b></p></div>
+		</section>
+		<section class="newsletter__button">
+			<button class="newsletter__button-see_external">See what we did</button>
+		</section>
+		<section class="newsletter__footer">
+			<b>Related content:</b> <span class="google__color-blue">How machine learning will inspire bigger and better creative ideas | If you're using a single tool for measurement, think again.</span>
+		</section>
+	</section>
+		
+</body>
