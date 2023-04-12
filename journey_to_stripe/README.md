@@ -1,9 +1,9 @@
-### Journey To Stripe
+# Journey To Stripe
 A folder that will highlight all the things i am learnig on my goal to working as an SE at Stripe
 Everything I learn and any accompanying projects will be placed here. Either in folders or single files
 The structure of the folder will also be updated in this readme
 
-### How I am starting
+# How I am starting
 
 - Learn Java
 - Data Structures & Algorithm 
