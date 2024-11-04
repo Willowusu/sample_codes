@@ -1,0 +1,6318 @@
+{
+	"info": {
+		"_postman_id": "62ba6477-50e5-4987-835a-7c6f64ac29e2",
+		"name": "JUNIPAY API V2",
+		"description": "The Juni Payment API is organized around REST. Our API accepts form-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes and authentication. We provide APIs and other services to enable you initiate collection, disbursement and remitance transactions.\n\n### Authentication\n\nYou will make use of the generated tokens to authenticate all your requests to the Junipay API. Tokens are generated for API endpoint requests by using your private key and have to be passed in the `Authorization` header parameter. Any request made to an API endpoint without a token will receive a `401: Unauthorised` response.\n\nThe Authorization header parameter should be passed in the format below.\n\n`Authorization: Bearer [TOKEN]`\n\nAll API requests must be made over HTTPS. Calls made over plain HTTP will fail. API requests without a valid authorization header parameter will also fail.\n\nTokens are required to be generated and defined in the headers parameter for that request to be authorized. Tokens must be generated from private keys with the `RS256` algorithm and are defined in the request paramters.\n\nThe example below shows how a token is generated from a private key using the `jsonwebtoken` npm package in NodeJS.\n\n``` javascript\n// Import the jsonwebtoken packge into your project \nvar jwt = require(\"jsonwebtoken\");\n// Get your private key \nvar privateKey = fs.readFileSync('{private_key_file_location}');\n// Generate token \nvar token;\ntry{\n    token = await jwt.sign({ payload : 'payload_example' }, privateKey, { algorithm: 'RS256'});\n} catch(err){\n    throw err;\n}\n// Return token \nreturn token;\n\n ```\n\n**Secure your Private Key**\n\nDo not commit your secret and private keys to git, or use them in client-side code.\n\n### Errors\n\nJunipay's API is RESTful and therefore, it uses conventional HTTP response codes to indicate the success or failure of requests.\n\n| CODE | DESCRIPTION |\n| --- | --- |\n| 200, 201 | Request was successful and intended action was carried out.  <br>Note that we will always send a 200 if a charge or verify  <br>request was made. Do check the data object to know how the  <br>charge went (i.e. successful or failed). |\n| 400 | A validation or client side error occurred and the request was  <br>not fulfilled. |\n| 401 | The request was not authorized. This can be triggered by passing  <br>an invalid secret key in the authorization header or the lack of one |\n| 404 | Request could not be fulfilled as the request resource does not exist. |\n| 500, 501, 502,  <br>503, 504 | Request could not be fulfilled due to an error on Junipay's end. This  <br>shouldn't happen so please report as soon as you encounter any instance  <br>of this. |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13788772"
+	},
+	"item": [
+		{
+			"name": "Disbursements",
+			"item": [
+				{
+					"name": "Create Disbursement",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"SAMDIS0000000000002\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/disbursements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"disbursements"
+							]
+						},
+						"description": "This endpoint is used to initiate a disbursement transaction.\n\n#### Request Body\n\n- `amount` (number, required): The amount of money to be disbursed.\n    \n- `sender` (object, required): Details of the sender including name, email, and phone number.\n    \n    - `name` (string, required): The name of the sender.\n        \n    - `email` (string): The email of the sender.\n        \n    - `phone` (string): The phone number of the sender.\n        \n- `beneficiary` (object, required): Details of the beneficiary including name, email, and phone number.\n    \n    - `name` (string, required): The name of the beneficiary.\n        \n    - `email` (string): The email of the beneficiary.\n        \n    - `phone` (string): The phone number of the beneficiary.\n        \n- `beneficiaryAccount` (object, required): Details of the beneficiary's account.\n    \n    - `channel` (string, required): The channel of the beneficiary's account (e.g., mobile_wallet).\n        \n    - `mobileWalletNumber` (string, required if channel = mobile_wallet): The mobile wallet number of the beneficiary.\n        \n    - `mobileWalletProviderCode` (string, required if channel = mobile_wallet): The provider code of the mobile wallet.\n        \n    - bankAccountNumber (string, required if channel = bank): The bank account number of the beneficiary.\n        \n    - bankCode (string, required if channel = bank): The bank code of the beneficiary.\n        \n    - `nameOnAccount` (string, required): The name on the beneficiary's account.\n        \n    - `countryCode` (string, required): The country code of the beneficiary's account.\n        \n- `reason` (string, required): The reason for the disbursement.\n    \n- `foreignId` (string): The foreign ID associated with the disbursement.\n    \n- `callbackUrl` (string): The URL to which the callback response will be sent.\n    \n\n#### Response\n\nThe response is a JSON object with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": { \"type\": \"string\" },\n    \"code\": { \"type\": \"string\" },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"status\": { \"type\": \"string\" },\n        \"foreignId\": { \"type\": \"string\" },\n        \"transactionId\": { \"type\": \"string\" }\n      }\n    }\n  }\n}\n\n ```"
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"SAMDIS0000000000002\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/disbursements",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"disbursements"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:47:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730569710"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "147"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_CREATED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMDIS0000000000002\",\n        \"transactionId\": \"DIS1730569676356\"\n    }\n}"
+						},
+						{
+							"name": "200 - Success - Bank",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"bank\",\n        \"bankAccountNumber\": \"0000000000000\",\n        \"bankCode\": \"2001\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"SAMDIS0000000000002\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:47:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730569710"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "147"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_CREATED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMDIS0000000000002\",\n        \"transactionId\": \"DIS1730569676356\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"0544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"0000000000\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 16:04:28 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730563512"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "91"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5b-oT07yYxcwn+phJL4Pbmb/97XjuU\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"0000000000\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:09:18 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730567391"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"6d-4K0p330aPbeRx95p8jzBNjf9M8k\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"sender.name\\\" is not allowed to be empty\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\"\n    },\n    \"reason\": \"Sample disbursement\",\n    \"foreignId\": \"0000000000000\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:35:09 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730568966"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Disbursement",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/disbursements/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"disbursements",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "DIS1730569676356"
+								}
+							]
+						},
+						"description": "### Retrieve Disbursement Information\n\nThis endpoint retrieves information about a specific disbursement with the provided ID.\n\n#### Request\n\nNo request body is required for this request.\n\n#### Response\n\nThe response will be a JSON object with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": {\n      \"type\": \"string\"\n    },\n    \"code\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"status\": {\n          \"type\": \"string\"\n        },\n        \"foreignId\": {\n          \"type\": \"string\"\n        },\n        \"transactionId\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}\n\n ```"
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/disbursements/DIS1730569676356",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"disbursements",
+										"DIS1730569676356"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_RETRIEVED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMDIS0000000000002\",\n        \"transactionId\": \"DIS1730569676356\"\n    }\n}"
+						},
+						{
+							"name": "404 - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/SAMDIS0000000000002",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"SAMDIS0000000000002"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:20:40 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571688"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "94"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"DISBURSEMENT_NOT_FOUND\",\n    \"data\": {\n        \"message\": \"Transaction not found\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/DIS1730569676356",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"DIS1730569676356"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/DIS1730569676356",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"DIS1730569676356"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify Disbursement Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "channel",
+									"value": "mobile_wallet",
+									"type": "text"
+								},
+								{
+									"key": "mobileWalletNumber",
+									"value": "+233544596164",
+									"type": "text"
+								},
+								{
+									"key": "mobileWalletProviderCode",
+									"value": "mtn",
+									"type": "text"
+								},
+								{
+									"key": "countryCode",
+									"value": "GHA",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/disbursements/beneficiary-accounts/verifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"disbursements",
+								"beneficiary-accounts",
+								"verifications"
+							]
+						},
+						"description": "### Request Headers\n\n- Content-Type: `multipart/form-data`\n    \n\n### Request Body\n\n- channel (text, required): The channel through which the disbursement will be made.\n    \n- mobileWalletNumber (text, required if channel = mobile_wallet): The mobile wallet number of the beneficiary.\n    \n- mobileWalletProviderCode (text, required if channel = mobile_wallet): The provider code of the mobile wallet.\n    \n- countryCode (text, required): The country code of the beneficiary.\n    \n\n### Response\n\nThe response of this request can be represented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": {\n      \"type\": \"string\"\n    },\n    \"code\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"nameOnAccount\": {\n          \"type\": \"string\"\n        },\n        \"mobileWalletProvider\": {\n          \"type\": \"string\"\n        },\n        \"bankName\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}\n\n ```\n\n#### Request Body\n\n- `channel` (string, required): The channel through which the disbursement will be made.\n    \n- `mobileWalletNumber` (string, required if channel = mobile_wallet): The mobile wallet number of the beneficiary.\n    \n- `mobileWalletProviderCode` (string, required if channel = mobile_wallet): The provider code of the mobile wallet.\n    \n- `bankAccountNumber` (string, required if channel = bank): The bank number of the beneficiary.\n    \n- `bankCode` (string, required if channel = bank): The bank code of the bank.\n    \n- `countryCode` (string, required): The country code of the beneficiary.\n    \n\n#### Response\n\nThe response of this request can be represented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": {\n      \"type\": \"string\"\n    },\n    \"code\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"nameOnAccount\": {\n          \"type\": \"string\"\n        },\n        \"mobileWalletProvider\": {\n          \"type\": \"string\"\n        },\n        \"bankName\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}\n\n ```"
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/disbursements/beneficiary-accounts/verifications",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"disbursements",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:03:32 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574266"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "151"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"97-YGks2UemgBB/1uSmogS7DC7dXhw\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"mobileWalletProvider\": \"mtn\"\n    }\n}"
+						},
+						{
+							"name": "200 - Success - Bank",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:06:54 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574451"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "175"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"af-WVp2jy4G3T0TqrGUqElsUmzqJ7o\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"bankName\": \"Standard Chartered Bank (Ghana) Limited\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:07:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574511"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Account not found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/disbursements/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"disbursements",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_NOT_VERIFIED\",\n    \"data\": {\n        \"message\": \"Account could not be verified, it probably does not exist\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Collections",
+			"item": [
+				{
+					"name": "Create Collection",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1,\n    \"payer\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"payerAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample collection\",\n    \"foreignId\": \"SAMDIS0000000000005\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/collections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"collections"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"payer\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"payerAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample collection\",\n    \"foreignId\": \"SAMDIS0000000000005\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/collections",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"collections"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:47:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730569710"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "147"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"COLLECTION_CREATED\",\n    \"data\": {\n        \"status\": \"pending\",\n        \"foreignId\": \"SAMDIS0000000000005\",\n        \"transactionId\": \"COL1730635166012\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"payer\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"payerAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample collection\",\n    \"foreignId\": \"SAMDIS0000000000005\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 16:04:28 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730563512"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "91"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5b-oT07yYxcwn+phJL4Pbmb/97XjuU\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"payer\": {\n        \"name\": \"\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"payerAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample collection\",\n    \"foreignId\": \"SAMDIS0000000000005\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:09:18 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730567391"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"6d-4K0p330aPbeRx95p8jzBNjf9M8k\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"payer.name\\\" is not allowed to be empty\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1,\n    \"payer\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\"\n    },\n    \"payerAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample collection\",\n    \"foreignId\": \"SAMDIS0000000000005\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:35:09 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730568966"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Collection",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/collections/COL1730635166012",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"collections",
+								"COL1730635166012"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/collections/COL1730635166012",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"collections",
+										"COL1730635166012"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"COLLECTION_RETRIEVED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMCOL0000000000005\",\n        \"transactionId\": \"COL1730635166012\"\n    }\n}"
+						},
+						{
+							"name": "404 - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/COL1730635166012",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"COL1730635166012"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:20:40 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571688"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "94"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"COLLECTION_NOT_FOUND\",\n    \"data\": {\n        \"message\": \"Transaction not found\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/COL1730635166012",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"COL1730635166012"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/COL1730635166012",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"COL1730635166012"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify Payer Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/collections/payer-accounts/verifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"collections",
+								"payer-accounts",
+								"verifications"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/collections/payer-accounts/verifications",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"collections",
+										"payer-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:03:32 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574266"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "151"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"97-YGks2UemgBB/1uSmogS7DC7dXhw\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"COLLECTION_PAYER_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"mobileWalletProvider\": \"mtn\"\n    }\n}"
+						},
+						{
+							"name": "200 - Success - Bank",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/payer-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"payer-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:06:54 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574451"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "175"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"af-WVp2jy4G3T0TqrGUqElsUmzqJ7o\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"COLLECTION_PAYER_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"bankName\": \"Standard Chartered Bank (Ghana) Limited\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/payer-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"payer-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:07:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574511"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/payer-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"payer-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Account not found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/collections/payer-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"collections",
+										"payer-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"COLLECTION_PAYER_ACCOUNT_NOT_VERIFIED\",\n    \"data\": {\n        \"message\": \"Account could not be verified, it probably does not exist\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Remittances",
+			"item": [
+				{
+					"name": "Create Remittance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/remittances",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"remittances"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/remittances",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"remittances"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:47:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730569710"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "147"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"REMITTANCE_CREATED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMREM0000000000001\",\n        \"transactionId\": \"REM100000000135\"\n    }\n}"
+						},
+						{
+							"name": "200 - Success - Bank",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"bank\",\n        \"bankAccountNumber\": \"0000000000000\",\n        \"bankCode\": \"2001\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:47:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730569710"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "147"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"REMITTANCE_CREATED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMREM0000000000001\",\n        \"transactionId\": \"REM100000000135\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 16:04:28 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730563512"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "91"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5b-oT07yYxcwn+phJL4Pbmb/97XjuU\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999998"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:09:18 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730567391"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"6d-4K0p330aPbeRx95p8jzBNjf9M8k\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"sender.name\\\" is not allowed to be empty\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sendAmount\": 1,\n    \"receiveAmount\": 1,\n    \"exchangeRate\": 1,\n    \"sendingCurrency\": \"USD\",\n    \"receivingCurrency\": \"GHS\",\n    \"sender\": {\n        \"name\": \"SAMPLE SENDER ONE\",\n        \"email\": \"senderone@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"USA\"\n    },\n    \"beneficiary\": {\n        \"name\": \"RAYMOND MENSAH QUARSHIE\",\n        \"email\": \"raymond@gmail.com\",\n        \"phone\": \"+233200000000\",\n        \"countryCode\": \"GHA\"\n    },\n    \"beneficiaryAccount\": {\n        \"channel\": \"mobile_wallet\",\n        \"mobileWalletNumber\": \"+233544596164\",\n        \"mobileWalletProviderCode\": \"mtn\",\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"countryCode\": \"GHA\"\n    },\n    \"reason\": \"Sample remittance\",\n    \"foreignId\": \"SAMREM0000000000001\",\n    \"callbackUrl\": \"https://webhooks.com/handle-callback\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 17:35:09 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730568966"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Remittance",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/remittances/REM100000000135",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"remittances",
+								"REM100000000135"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/remittances/REM100000000135",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"remittances",
+										"REM100000000135"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"REMITTANCE_RETRIEVED\",\n    \"data\": {\n        \"status\": \"success\",\n        \"foreignId\": \"SAMREM0000000000001\",\n        \"transactionId\": \"REM100000000135\"\n    }\n}"
+						},
+						{
+							"name": "404 - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/REM100000000135",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"REM100000000135"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:20:40 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571688"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "94"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"REMITTANCE_NOT_FOUND\",\n    \"data\": {\n        \"message\": \"Transaction not found at JuniPay\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/REM100000000135",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"REM100000000135"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/REM100000000135",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"REM100000000135"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify Remittance Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/remittances/beneficiary-accounts/verifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"remittances",
+								"beneficiary-accounts",
+								"verifications"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success - Mobile Wallet",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "Rud10030",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5001/v2/remittances/beneficiary-accounts/verifications",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5001",
+									"path": [
+										"v2",
+										"remittances",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:03:32 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574266"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "151"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"97-YGks2UemgBB/1uSmogS7DC7dXhw\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND QUARSHIE MENSAH\",\n        \"mobileWalletProvider\": \"mtn\"\n    }\n}"
+						},
+						{
+							"name": "200 - Success - Bank",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"bank\",\n    \"bankAccountNumber\": \"0101013830800\",\n    \"bankCode\": \"2019\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:06:54 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574451"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "175"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"af-WVp2jy4G3T0TqrGUqElsUmzqJ7o\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED\",\n    \"data\": {\n        \"nameOnAccount\": \"RAYMOND MENSAH QUARSHIE\",\n        \"bankName\": \"Standard Chartered Bank (Ghana) Limited\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:07:50 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574511"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Account not found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"channel\": \"mobile_wallet\",\n    \"mobileWalletNumber\": \"+233544596164\",\n    \"mobileWalletProviderCode\": \"mtn\",\n    \"countryCode\": \"GHA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/remittances/beneficiary-accounts/verifications",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"remittances",
+										"beneficiary-accounts",
+										"verifications"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 19:09:00 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730574599"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"DISBURSEMENT_BENEFICIARY_ACCOUNT_NOT_VERIFIED\",\n    \"data\": {\n        \"message\": \"Account could not be verified, it probably does not exist\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Exchange Rates",
+			"item": [
+				{
+					"name": "Get Exchange Rates",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=GBP&receivingCurrency=GHS",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"exchange-rates"
+							],
+							"query": [
+								{
+									"key": "sendingCurrency",
+									"value": "GBP"
+								},
+								{
+									"key": "receivingCurrency",
+									"value": "GHS"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=USD&receivingCurrency=GHS",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"exchange-rates"
+									],
+									"query": [
+										{
+											"key": "sendingCurrency",
+											"value": "USD"
+										},
+										{
+											"key": "receivingCurrency",
+											"value": "GHS"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"EXCHANGE_RATES_RETRIEVED\",\n    \"data\": {\n        \"sendingCurrency\": \"USD\",\n        \"receivingCurrency\": \"GHS\",\n        \"exchangeRate\": 1\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Exchange Rate Not Set",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=GBP&receivingCurrency=GHS",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"exchange-rates"
+									],
+									"query": [
+										{
+											"key": "sendingCurrency",
+											"value": "GBP"
+										},
+										{
+											"key": "receivingCurrency",
+											"value": "GHS"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"EXCHANGE_RATE_NOT_RETRIEVED\",\n    \"data\": {\n        \"message\": \"Exchange rate has not been set for currencies\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Validation Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=GBP&receivingCurrency=",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"exchange-rates"
+									],
+									"query": [
+										{
+											"key": "sendingCurrency",
+											"value": "GBP"
+										},
+										{
+											"key": "receivingCurrency",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"receivingCurrency\\\" is not allowed to be empty\"\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=USD&receivingCurrency=GHS",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"exchange-rates"
+									],
+									"query": [
+										{
+											"key": "sendingCurrency",
+											"value": "USD"
+										},
+										{
+											"key": "receivingCurrency",
+											"value": "GHS"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/exchange-rates?sendingCurrency=USD&receivingCurrency=GHS",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"exchange-rates"
+									],
+									"query": [
+										{
+											"key": "sendingCurrency",
+											"value": "USD"
+										},
+										{
+											"key": "receivingCurrency",
+											"value": "GHS"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Account Balance",
+			"item": [
+				{
+					"name": "Get Account Balance",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/balances",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"balances"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/balances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"balances"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"ACCOUNT_BALANCE_RETRIEVED\",\n    \"data\": {\n        \"accountBalance\": 90071.53\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/balances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"balances"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/balances",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"balances"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Banks",
+			"item": [
+				{
+					"name": "Get Banks",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/banks?countryCode=GHA",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"banks"
+							],
+							"query": [
+								{
+									"key": "countryCode",
+									"value": "GHA"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/banks?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"banks"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"BANKS_RETRIEVED\",\n    \"data\": {\n        \"banks\": [\n            {\n                \"code\": \"2004\",\n                \"bankName\": \"ARB Apex Bank Limited\"\n            },\n            {\n                \"code\": \"2001\",\n                \"bankName\": \"Access Bank\"\n            },\n            {\n                \"code\": \"2003\",\n                \"bankName\": \"Agricultural Development Bank Limited\"\n            },\n            {\n                \"code\": \"2005\",\n                \"bankName\": \"Bank of Africa\"\n            },\n            {\n                \"code\": \"2006\",\n                \"bankName\": \"Bank of Ghana\"\n            },\n            {\n                \"code\": \"2002\",\n                \"bankName\": \"Barclays Bank Ghana\"\n            },\n            {\n                \"code\": \"2007\",\n                \"bankName\": \"CalBank PLC\"\n            },\n            {\n                \"code\": \"2008\",\n                \"bankName\": \"Consolidated Bank Ghana Limited\"\n            },\n            {\n                \"code\": \"2009\",\n                \"bankName\": \"Ecobank Ghana Limited\"\n            },\n            {\n                \"code\": \"2024\",\n                \"bankName\": \"FIRST BANK OF NIGERIA\"\n            },\n            {\n                \"code\": \"2010\",\n                \"bankName\": \"Fidelity Bank Ghana Limited\"\n            },\n            {\n                \"code\": \"2011\",\n                \"bankName\": \"First Atlantic Bank Limited\"\n            },\n            {\n                \"code\": \"2012\",\n                \"bankName\": \"First National Bank (Ghana) Limited\"\n            },\n            {\n                \"code\": \"2013\",\n                \"bankName\": \"GCB Bank Limited\"\n            },\n            {\n                \"code\": \"2014\",\n                \"bankName\": \"Guaranty Trust Bank (Ghana) Limited\"\n            },\n            {\n                \"code\": \"2015\",\n                \"bankName\": \"National Investment Bank Limited\"\n            },\n            {\n                \"code\": \"2016\",\n                \"bankName\": \"Prudential Bank Limited\"\n            },\n            {\n                \"code\": \"2017\",\n                \"bankName\": \"Republic Bank (Ghana) PLC\"\n            },\n            {\n                \"code\": \"2025\",\n                \"bankName\": \"SOCIETE GENERALE GHANA\"\n            },\n            {\n                \"code\": \"2020\",\n                \"bankName\": \"Sahel Sahara Bank (BSIC)\"\n            },\n            {\n                \"code\": \"2018\",\n                \"bankName\": \"Stanbic Bank Ghana Limited\"\n            },\n            {\n                \"code\": \"2019\",\n                \"bankName\": \"Standard Chartered Bank (Ghana) Limited\"\n            },\n            {\n                \"code\": \"2021\",\n                \"bankName\": \"United Bank of Africa\"\n            },\n            {\n                \"code\": \"2022\",\n                \"bankName\": \"Universal Merchant Bank Limited\"\n            },\n            {\n                \"code\": \"2023\",\n                \"bankName\": \"Zenith Bank (Ghana) Limited\"\n            }\n        ]\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/banks?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"banks"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/banks?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"banks"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Validation Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/banks?countryCode=",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"banks"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 03 Nov 2024 16:46:58 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730652467"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"6d-TaovMFfZIyEz4q88p3cAkZDRCNQ\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"countryCode\\\" is not allowed to be empty\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Mobile Wallets",
+			"item": [
+				{
+					"name": "Get Mobile Wallets",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"type": "text"
+							},
+							{
+								"key": "clientid",
+								"value": "{{clientid}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v2/mobile-wallets?countryCode=GHA",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v2",
+								"mobile-wallets"
+							],
+							"query": [
+								{
+									"key": "countryCode",
+									"value": "GHA"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/mobile-wallets?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"mobile-wallets"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:16:51 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571461"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "149"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"95-iorbR5RlHdVp8uqCgTkRbHQrmI0\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"success\",\n    \"code\": \"MOBILE_WALLETS_RETRIEVED\",\n    \"data\": {\n        \"banks\": [\n            {\n                \"code\": \"airtelTigo\",\n                \"bankName\": \"Airtel/Tigo Cash\"\n            },\n            {\n                \"code\": \"airteltigo\",\n                \"bankName\": \"Airtel/Tigo Cash\"\n            },\n            {\n                \"code\": \"mtn\",\n                \"bankName\": \"MTN Mobile Money\"\n            },\n            {\n                \"code\": \"vodafone\",\n                \"bankName\": \"Vodafone Cash\"\n            }\n        ]\n    }\n}"
+						},
+						{
+							"name": "401 - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/mobile-wallets?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"mobile-wallets"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:24:07 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571904"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "82"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"data\": {\n        \"message\": \"Unauthorised\"\n    }\n}"
+						},
+						{
+							"name": "500 - Internal Server Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/mobile-wallets?countryCode=GHA",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"mobile-wallets"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": "GHA"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 02 Nov 2024 18:25:16 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730571964"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"54-p18Whi1UxH7hRtmDXyedEWcxfE8\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"SERVER_ERROR\",\n    \"data\": {\n        \"message\": \"Internal Server Error\"\n    }\n}"
+						},
+						{
+							"name": "400 - Bad Request - Validation Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cache-Control",
+										"value": "no-cache",
+										"type": "text"
+									},
+									{
+										"key": "clientid",
+										"value": "{{clientid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/v2/mobile-wallets?countryCode=",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v2",
+										"mobile-wallets"
+									],
+									"query": [
+										{
+											"key": "countryCode",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-RateLimit-Limit",
+									"value": "1000000"
+								},
+								{
+									"key": "X-RateLimit-Remaining",
+									"value": "999999"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 03 Nov 2024 16:46:58 GMT"
+								},
+								{
+									"key": "X-RateLimit-Reset",
+									"value": "1730652467"
+								},
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"6d-TaovMFfZIyEz4q88p3cAkZDRCNQ\""
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"data\": {\n        \"message\": \"\\\"countryCode\\\" is not allowed to be empty\"\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "[baseUrl]",
+			"type": "string"
+		},
+		{
+			"key": "clientid",
+			"value": "[clientId]",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "[token]",
+			"type": "string"
+		}
+	]
+}
