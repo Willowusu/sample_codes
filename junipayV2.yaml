@@ -1,0 +1,3625 @@
+openapi: 3.0.0
+info:
+  title: JUNIPAY API V2
+  description: >-
+    The Juni Payment API is organized around REST. Our API accepts form-encoded
+    request bodies, returns JSON-encoded responses, and uses standard HTTP
+    response codes and authentication. We provide APIs and other services to
+    enable you initiate collection, disbursement and remitance transactions.
+
+
+    ### Authentication
+
+
+    You will make use of the generated tokens to authenticate all your requests
+    to the Junipay API. Tokens are generated for API endpoint requests by using
+    your private key and have to be passed in the `Authorization` header
+    parameter. Any request made to an API endpoint without a token will receive
+    a `401: Unauthorised` response.
+
+
+    The Authorization header parameter should be passed in the format below.
+
+
+    `Authorization: Bearer [TOKEN]`
+
+
+    All API requests must be made over HTTPS. Calls made over plain HTTP will
+    fail. API requests without a valid authorization header parameter will also
+    fail.
+
+
+    Tokens are required to be generated and defined in the headers parameter for
+    that request to be authorized. Tokens must be generated from private keys
+    with the `RS256` algorithm and are defined in the request paramters.
+
+
+    The example below shows how a token is generated from a private key using
+    the `jsonwebtoken` npm package in NodeJS.
+
+
+    ``` javascript
+
+    // Import the jsonwebtoken packge into your project 
+
+    var jwt = require("jsonwebtoken");
+
+    // Get your private key 
+
+    var privateKey = fs.readFileSync('{private_key_file_location}');
+
+    // Generate token 
+
+    var token;
+
+    try{
+        token = await jwt.sign({ payload : 'payload_example' }, privateKey, { algorithm: 'RS256'});
+    } catch(err){
+        throw err;
+    }
+
+    // Return token 
+
+    return token;
+
+     ```
+
+    **Secure your Private Key**
+
+
+    Do not commit your secret and private keys to git, or use them in
+    client-side code.
+
+
+    ### Errors
+
+
+    Junipay's API is RESTful and therefore, it uses conventional HTTP response
+    codes to indicate the success or failure of requests.
+
+
+    | CODE | DESCRIPTION |
+
+    | --- | --- |
+
+    | 200, 201 | Request was successful and intended action was carried out. 
+    <br>Note that we will always send a 200 if a charge or verify  <br>request
+    was made. Do check the data object to know how the  <br>charge went (i.e.
+    successful or failed). |
+
+    | 400 | A validation or client side error occurred and the request was 
+    <br>not fulfilled. |
+
+    | 401 | The request was not authorized. This can be triggered by passing 
+    <br>an invalid secret key in the authorization header or the lack of one |
+
+    | 404 | Request could not be fulfilled as the request resource does not
+    exist. |
+
+    | 500, 501, 502,  <br>503, 504 | Request could not be fulfilled due to an
+    error on Junipay's end. This  <br>shouldn't happen so please report as soon
+    as you encounter any instance  <br>of this. |
+  version: 1.0.0
+servers:
+  - url: http://{{baseurl}}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: Disbursements
+  - name: Collections
+  - name: Remittances
+  - name: Exchange Rates
+  - name: Account Balance
+  - name: Banks
+  - name: Mobile Wallets
+paths:
+  /v2/disbursements:
+    post:
+      tags:
+        - Disbursements
+      summary: Create Disbursement
+      description: >-
+        This endpoint is used to initiate a disbursement transaction.
+
+
+        #### Request Body
+
+
+        - `amount` (number, required): The amount of money to be disbursed.
+            
+        - `sender` (object, required): Details of the sender including name,
+        email, and phone number.
+            
+            - `name` (string, required): The name of the sender.
+                
+            - `email` (string): The email of the sender.
+                
+            - `phone` (string): The phone number of the sender.
+                
+        - `beneficiary` (object, required): Details of the beneficiary including
+        name, email, and phone number.
+            
+            - `name` (string, required): The name of the beneficiary.
+                
+            - `email` (string): The email of the beneficiary.
+                
+            - `phone` (string): The phone number of the beneficiary.
+                
+        - `beneficiaryAccount` (object, required): Details of the beneficiary's
+        account.
+            
+            - `channel` (string, required): The channel of the beneficiary's account (e.g., mobile_wallet).
+                
+            - `mobileWalletNumber` (string, required if channel = mobile_wallet): The mobile wallet number of the beneficiary.
+                
+            - `mobileWalletProviderCode` (string, required if channel = mobile_wallet): The provider code of the mobile wallet.
+                
+            - bankAccountNumber (string, required if channel = bank): The bank account number of the beneficiary.
+                
+            - bankCode (string, required if channel = bank): The bank code of the beneficiary.
+                
+            - `nameOnAccount` (string, required): The name on the beneficiary's account.
+                
+            - `countryCode` (string, required): The country code of the beneficiary's account.
+                
+        - `reason` (string, required): The reason for the disbursement.
+            
+        - `foreignId` (string): The foreign ID associated with the disbursement.
+            
+        - `callbackUrl` (string): The URL to which the callback response will be
+        sent.
+            
+
+        #### Response
+
+
+        The response is a JSON object with the following schema:
+
+
+        ``` json
+
+        {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "code": { "type": "string" },
+            "data": {
+              "type": "object",
+              "properties": {
+                "status": { "type": "string" },
+                "foreignId": { "type": "string" },
+                "transactionId": { "type": "string" }
+              }
+            }
+          }
+        }
+
+         ```
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                amount: 1
+                sender:
+                  name: SAMPLE SENDER ONE
+                  email: senderone@gmail.com
+                  phone: '+233200000000'
+                beneficiary:
+                  name: RAYMOND MENSAH QUARSHIE
+                  email: raymond@gmail.com
+                  phone: '+233200000000'
+                beneficiaryAccount:
+                  channel: mobile_wallet
+                  mobileWalletNumber: '+233544596164'
+                  mobileWalletProviderCode: mtn
+                  nameOnAccount: RAYMOND MENSAH QUARSHIE
+                  countryCode: GHA
+                reason: Sample disbursement
+                foreignId: SAMDIS0000000000002
+                callbackUrl: https://webhooks.com/handle-callback
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:47:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730569710'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '147'
+            ETag:
+              schema:
+                type: string
+                example: W/"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success - Mobile Wallet
+                  value:
+                    status: success
+                    code: DISBURSEMENT_CREATED
+                    data:
+                      status: success
+                      foreignId: SAMDIS0000000000002
+                      transactionId: DIS1730569676356
+                example-1:
+                  summary: 200 - Success - Bank
+                  value:
+                    status: success
+                    code: DISBURSEMENT_CREATED
+                    data:
+                      status: success
+                      foreignId: SAMDIS0000000000002
+                      transactionId: DIS1730569676356
+        '400':
+          description: Bad Request
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:09:18 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730567391'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '109'
+            ETag:
+              schema:
+                type: string
+                example: W/"6d-4K0p330aPbeRx95p8jzBNjf9M8k"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: VALIDATION_ERROR
+                data:
+                  message: '"sender.name" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 16:04:28 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730563512'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '91'
+            ETag:
+              schema:
+                type: string
+                example: W/"5b-oT07yYxcwn+phJL4Pbmb/97XjuU"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:35:09 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730568966'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/disbursements/{id}:
+    get:
+      tags:
+        - Disbursements
+      summary: Get Disbursement
+      description: >-
+        ### Retrieve Disbursement Information
+
+
+        This endpoint retrieves information about a specific disbursement with
+        the provided ID.
+
+
+        #### Request
+
+
+        No request body is required for this request.
+
+
+        #### Response
+
+
+        The response will be a JSON object with the following schema:
+
+
+        ``` json
+
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "foreignId": {
+                  "type": "string"
+                },
+                "transactionId": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+
+         ```
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: DIS1730569676356
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: DISBURSEMENT_RETRIEVED
+                data:
+                  status: success
+                  foreignId: SAMDIS0000000000002
+                  transactionId: DIS1730569676356
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '404':
+          description: Not Found
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:20:40 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571688'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '94'
+            ETag:
+              schema:
+                type: string
+                example: W/"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: DISBURSEMENT_NOT_FOUND
+                data:
+                  message: Transaction not found
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/disbursements/beneficiary-accounts/verifications:
+    post:
+      tags:
+        - Disbursements
+      summary: Verify Disbursement Account
+      description: >-
+        ### Request Headers
+
+
+        - Content-Type: `multipart/form-data`
+            
+
+        ### Request Body
+
+
+        - channel (text, required): The channel through which the disbursement
+        will be made.
+            
+        - mobileWalletNumber (text, required if channel = mobile_wallet): The
+        mobile wallet number of the beneficiary.
+            
+        - mobileWalletProviderCode (text, required if channel = mobile_wallet):
+        The provider code of the mobile wallet.
+            
+        - countryCode (text, required): The country code of the beneficiary.
+            
+
+        ### Response
+
+
+        The response of this request can be represented as a JSON schema:
+
+
+        ``` json
+
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "nameOnAccount": {
+                  "type": "string"
+                },
+                "mobileWalletProvider": {
+                  "type": "string"
+                },
+                "bankName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+
+         ```
+
+        #### Request Body
+
+
+        - `channel` (string, required): The channel through which the
+        disbursement will be made.
+            
+        - `mobileWalletNumber` (string, required if channel = mobile_wallet):
+        The mobile wallet number of the beneficiary.
+            
+        - `mobileWalletProviderCode` (string, required if channel =
+        mobile_wallet): The provider code of the mobile wallet.
+            
+        - `bankAccountNumber` (string, required if channel = bank): The bank
+        number of the beneficiary.
+            
+        - `bankCode` (string, required if channel = bank): The bank code of the
+        bank.
+            
+        - `countryCode` (string, required): The country code of the beneficiary.
+            
+
+        #### Response
+
+
+        The response of this request can be represented as a JSON schema:
+
+
+        ``` json
+
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "nameOnAccount": {
+                  "type": "string"
+                },
+                "mobileWalletProvider": {
+                  "type": "string"
+                },
+                "bankName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+
+         ```
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                channel:
+                  type: string
+                  example: mobile_wallet
+                mobileWalletNumber:
+                  type: string
+                  example: '+233544596164'
+                mobileWalletProviderCode:
+                  type: string
+                  example: mtn
+                countryCode:
+                  type: string
+                  example: GHA
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:03:32 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574266'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '151'
+            ETag:
+              schema:
+                type: string
+                example: W/"97-YGks2UemgBB/1uSmogS7DC7dXhw"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success - Mobile Wallet
+                  value:
+                    status: success
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND QUARSHIE MENSAH
+                      mobileWalletProvider: mtn
+                example-1:
+                  summary: 200 - Success - Bank
+                  value:
+                    status: success
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND MENSAH QUARSHIE
+                      bankName: Standard Chartered Bank (Ghana) Limited
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:07:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574511'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:09:00 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574599'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 500 - Internal Server Error
+                  value:
+                    status: failed
+                    code: SERVER_ERROR
+                    data:
+                      message: Internal Server Error
+                example-1:
+                  summary: 400 - Bad Request - Account not found
+                  value:
+                    status: failed
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_NOT_VERIFIED
+                    data:
+                      message: >-
+                        Account could not be verified, it probably does not
+                        exist
+  /v2/collections:
+    post:
+      tags:
+        - Collections
+      summary: Create Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                amount: 1
+                payer:
+                  name: SAMPLE SENDER ONE
+                  email: senderone@gmail.com
+                  phone: '+233200000000'
+                payerAccount:
+                  channel: mobile_wallet
+                  mobileWalletNumber: '+233544596164'
+                  mobileWalletProviderCode: mtn
+                  nameOnAccount: RAYMOND MENSAH QUARSHIE
+                  countryCode: GHA
+                reason: Sample collection
+                foreignId: SAMDIS0000000000005
+                callbackUrl: https://webhooks.com/handle-callback
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:47:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730569710'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '147'
+            ETag:
+              schema:
+                type: string
+                example: W/"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: COLLECTION_CREATED
+                data:
+                  status: pending
+                  foreignId: SAMDIS0000000000005
+                  transactionId: COL1730635166012
+        '400':
+          description: Bad Request
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:09:18 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730567391'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '109'
+            ETag:
+              schema:
+                type: string
+                example: W/"6d-4K0p330aPbeRx95p8jzBNjf9M8k"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: VALIDATION_ERROR
+                data:
+                  message: '"payer.name" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 16:04:28 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730563512'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '91'
+            ETag:
+              schema:
+                type: string
+                example: W/"5b-oT07yYxcwn+phJL4Pbmb/97XjuU"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:35:09 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730568966'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/collections/COL1730635166012:
+    get:
+      tags:
+        - Collections
+      summary: Get Collection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: COLLECTION_RETRIEVED
+                data:
+                  status: success
+                  foreignId: SAMCOL0000000000005
+                  transactionId: COL1730635166012
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '404':
+          description: Not Found
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:20:40 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571688'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '94'
+            ETag:
+              schema:
+                type: string
+                example: W/"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: COLLECTION_NOT_FOUND
+                data:
+                  message: Transaction not found
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/collections/payer-accounts/verifications:
+    post:
+      tags:
+        - Collections
+      summary: Verify Payer Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                channel: mobile_wallet
+                mobileWalletNumber: '+233544596164'
+                mobileWalletProviderCode: mtn
+                countryCode: GHA
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:03:32 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574266'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '151'
+            ETag:
+              schema:
+                type: string
+                example: W/"97-YGks2UemgBB/1uSmogS7DC7dXhw"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success - Mobile Wallet
+                  value:
+                    status: success
+                    code: COLLECTION_PAYER_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND QUARSHIE MENSAH
+                      mobileWalletProvider: mtn
+                example-1:
+                  summary: 200 - Success - Bank
+                  value:
+                    status: success
+                    code: COLLECTION_PAYER_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND MENSAH QUARSHIE
+                      bankName: Standard Chartered Bank (Ghana) Limited
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:07:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574511'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:09:00 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574599'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 500 - Internal Server Error
+                  value:
+                    status: failed
+                    code: SERVER_ERROR
+                    data:
+                      message: Internal Server Error
+                example-1:
+                  summary: 400 - Bad Request - Account not found
+                  value:
+                    status: failed
+                    code: COLLECTION_PAYER_ACCOUNT_NOT_VERIFIED
+                    data:
+                      message: >-
+                        Account could not be verified, it probably does not
+                        exist
+  /v2/remittances:
+    post:
+      tags:
+        - Remittances
+      summary: Create Remittance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                sendAmount: 1
+                receiveAmount: 1
+                exchangeRate: 1
+                sendingCurrency: USD
+                receivingCurrency: GHS
+                sender:
+                  name: SAMPLE SENDER ONE
+                  email: senderone@gmail.com
+                  phone: '+233200000000'
+                  countryCode: USA
+                beneficiary:
+                  name: RAYMOND MENSAH QUARSHIE
+                  email: raymond@gmail.com
+                  phone: '+233200000000'
+                  countryCode: GHA
+                beneficiaryAccount:
+                  channel: mobile_wallet
+                  mobileWalletNumber: '+233544596164'
+                  mobileWalletProviderCode: mtn
+                  nameOnAccount: RAYMOND QUARSHIE MENSAH
+                  countryCode: GHA
+                reason: Sample remittance
+                foreignId: SAMREM0000000000001
+                callbackUrl: https://webhooks.com/handle-callback
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:47:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730569710'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '147'
+            ETag:
+              schema:
+                type: string
+                example: W/"93-ZrZ7fXXZ4mDifEXjuZv60RI6qBs"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success - Mobile Wallet
+                  value:
+                    status: success
+                    code: REMITTANCE_CREATED
+                    data:
+                      status: success
+                      foreignId: SAMREM0000000000001
+                      transactionId: REM100000000135
+                example-1:
+                  summary: 200 - Success - Bank
+                  value:
+                    status: success
+                    code: REMITTANCE_CREATED
+                    data:
+                      status: success
+                      foreignId: SAMREM0000000000001
+                      transactionId: REM100000000135
+        '400':
+          description: Bad Request
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999998'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:09:18 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730567391'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '109'
+            ETag:
+              schema:
+                type: string
+                example: W/"6d-4K0p330aPbeRx95p8jzBNjf9M8k"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: VALIDATION_ERROR
+                data:
+                  message: '"sender.name" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 16:04:28 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730563512'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '91'
+            ETag:
+              schema:
+                type: string
+                example: W/"5b-oT07yYxcwn+phJL4Pbmb/97XjuU"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 17:35:09 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730568966'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/remittances/REM100000000135:
+    get:
+      tags:
+        - Remittances
+      summary: Get Remittance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: REMITTANCE_RETRIEVED
+                data:
+                  status: success
+                  foreignId: SAMREM0000000000001
+                  transactionId: REM100000000135
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '404':
+          description: Not Found
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:20:40 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571688'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '94'
+            ETag:
+              schema:
+                type: string
+                example: W/"5e-QdLgeLRWw84JF8pBHdp2z0Cw6z4"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: REMITTANCE_NOT_FOUND
+                data:
+                  message: Transaction not found at JuniPay
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/remittances/beneficiary-accounts/verifications:
+    post:
+      tags:
+        - Remittances
+      summary: Verify Remittance Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                channel: mobile_wallet
+                mobileWalletNumber: '+233544596164'
+                mobileWalletProviderCode: mtn
+                countryCode: GHA
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:03:32 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574266'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '151'
+            ETag:
+              schema:
+                type: string
+                example: W/"97-YGks2UemgBB/1uSmogS7DC7dXhw"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success - Mobile Wallet
+                  value:
+                    status: success
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND QUARSHIE MENSAH
+                      mobileWalletProvider: mtn
+                example-1:
+                  summary: 200 - Success - Bank
+                  value:
+                    status: success
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_VERIFIED
+                    data:
+                      nameOnAccount: RAYMOND MENSAH QUARSHIE
+                      bankName: Standard Chartered Bank (Ghana) Limited
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:07:50 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574511'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 19:09:00 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730574599'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 500 - Internal Server Error
+                  value:
+                    status: failed
+                    code: SERVER_ERROR
+                    data:
+                      message: Internal Server Error
+                example-1:
+                  summary: 400 - Bad Request - Account not found
+                  value:
+                    status: failed
+                    code: DISBURSEMENT_BENEFICIARY_ACCOUNT_NOT_VERIFIED
+                    data:
+                      message: >-
+                        Account could not be verified, it probably does not
+                        exist
+  /v2/exchange-rates:
+    get:
+      tags:
+        - Exchange Rates
+      summary: Get Exchange Rates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+        - name: sendingCurrency
+          in: query
+          schema:
+            type: string
+          example: GBP
+        - name: receivingCurrency
+          in: query
+          schema:
+            type: string
+          example: GHS
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 200 - Success
+                  value:
+                    status: success
+                    code: EXCHANGE_RATES_RETRIEVED
+                    data:
+                      sendingCurrency: USD
+                      receivingCurrency: GHS
+                      exchangeRate: 1
+                example-1:
+                  summary: 400 - Bad Request - Exchange Rate Not Set
+                  value:
+                    status: failed
+                    code: EXCHANGE_RATE_NOT_RETRIEVED
+                    data:
+                      message: Exchange rate has not been set for currencies
+                example-2:
+                  summary: 400 - Bad Request - Validation Error
+                  value:
+                    status: failed
+                    code: VALIDATION_ERROR
+                    data:
+                      message: '"receivingCurrency" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/balances:
+    get:
+      tags:
+        - Account Balance
+      summary: Get Account Balance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: ACCOUNT_BALANCE_RETRIEVED
+                data:
+                  accountBalance: 90071.53
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/banks:
+    get:
+      tags:
+        - Banks
+      summary: Get Banks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+          example: GHA
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: BANKS_RETRIEVED
+                data:
+                  banks:
+                    - code: '2004'
+                      bankName: ARB Apex Bank Limited
+                    - code: '2001'
+                      bankName: Access Bank
+                    - code: '2003'
+                      bankName: Agricultural Development Bank Limited
+                    - code: '2005'
+                      bankName: Bank of Africa
+                    - code: '2006'
+                      bankName: Bank of Ghana
+                    - code: '2002'
+                      bankName: Barclays Bank Ghana
+                    - code: '2007'
+                      bankName: CalBank PLC
+                    - code: '2008'
+                      bankName: Consolidated Bank Ghana Limited
+                    - code: '2009'
+                      bankName: Ecobank Ghana Limited
+                    - code: '2024'
+                      bankName: FIRST BANK OF NIGERIA
+                    - code: '2010'
+                      bankName: Fidelity Bank Ghana Limited
+                    - code: '2011'
+                      bankName: First Atlantic Bank Limited
+                    - code: '2012'
+                      bankName: First National Bank (Ghana) Limited
+                    - code: '2013'
+                      bankName: GCB Bank Limited
+                    - code: '2014'
+                      bankName: Guaranty Trust Bank (Ghana) Limited
+                    - code: '2015'
+                      bankName: National Investment Bank Limited
+                    - code: '2016'
+                      bankName: Prudential Bank Limited
+                    - code: '2017'
+                      bankName: Republic Bank (Ghana) PLC
+                    - code: '2025'
+                      bankName: SOCIETE GENERALE GHANA
+                    - code: '2020'
+                      bankName: Sahel Sahara Bank (BSIC)
+                    - code: '2018'
+                      bankName: Stanbic Bank Ghana Limited
+                    - code: '2019'
+                      bankName: Standard Chartered Bank (Ghana) Limited
+                    - code: '2021'
+                      bankName: United Bank of Africa
+                    - code: '2022'
+                      bankName: Universal Merchant Bank Limited
+                    - code: '2023'
+                      bankName: Zenith Bank (Ghana) Limited
+        '400':
+          description: Bad Request
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sun, 03 Nov 2024 16:46:58 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730652467'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '109'
+            ETag:
+              schema:
+                type: string
+                example: W/"6d-TaovMFfZIyEz4q88p3cAkZDRCNQ"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: VALIDATION_ERROR
+                data:
+                  message: '"countryCode" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
+  /v2/mobile-wallets:
+    get:
+      tags:
+        - Mobile Wallets
+      summary: Get Mobile Wallets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Cache-Control
+          in: header
+          schema:
+            type: string
+          example: no-cache
+        - name: clientid
+          in: header
+          schema:
+            type: string
+          example: '{{clientid}}'
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+          example: GHA
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:16:51 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571461'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '149'
+            ETag:
+              schema:
+                type: string
+                example: W/"95-iorbR5RlHdVp8uqCgTkRbHQrmI0"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                code: MOBILE_WALLETS_RETRIEVED
+                data:
+                  banks:
+                    - code: airtelTigo
+                      bankName: Airtel/Tigo Cash
+                    - code: airteltigo
+                      bankName: Airtel/Tigo Cash
+                    - code: mtn
+                      bankName: MTN Mobile Money
+                    - code: vodafone
+                      bankName: Vodafone Cash
+        '400':
+          description: Bad Request
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sun, 03 Nov 2024 16:46:58 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730652467'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '109'
+            ETag:
+              schema:
+                type: string
+                example: W/"6d-TaovMFfZIyEz4q88p3cAkZDRCNQ"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: VALIDATION_ERROR
+                data:
+                  message: '"countryCode" is not allowed to be empty'
+        '401':
+          description: Unauthorized
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:24:07 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571904'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '82'
+            ETag:
+              schema:
+                type: string
+                example: W/"52-P/QPiTg1aOt5V5lY3RuX1LpLNFM"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: INVALID_CREDENTIALS
+                data:
+                  message: Unauthorised
+        '500':
+          description: Internal Server Error
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: '1000000'
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: '999999'
+            Date:
+              schema:
+                type: string
+                example: Sat, 02 Nov 2024 18:25:16 GMT
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: '1730571964'
+            Vary:
+              schema:
+                type: string
+                example: Origin
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '84'
+            ETag:
+              schema:
+                type: string
+                example: W/"54-p18Whi1UxH7hRtmDXyedEWcxfE8"
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: failed
+                code: SERVER_ERROR
+                data:
+                  message: Internal Server Error
